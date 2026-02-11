@@ -1,0 +1,11 @@
+.env
+.DS_Store
+Thumbs.db
+Organized_Photos/
+Backup_Mirror/
+iPhone_Backup/
+mnt/
+test/
+RemoveBooksDRM/
+homebrew-fuse/
+celcho/

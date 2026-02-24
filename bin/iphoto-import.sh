@@ -39,11 +39,22 @@ else
     exit 1
 fi
 
-# 3. Dependency Check
-for cmd in ifuse rsync sips; do
+# 3. Dependency Check & OS Detection
+OS_TYPE=$(uname -s)
+
+# Define dependencies based on OS
+if [[ "$OS_TYPE" == "Darwin" ]]; then
+    DEPS="ifuse rsync sips"
+    INSTALL_CMD="brew install rsync ifuse"
+else
+    DEPS="ifuse rsync mogrify"
+    INSTALL_CMD="sudo dnf install rsync ifuse ImageMagick"
+fi
+
+for cmd in $DEPS; do
     if ! command -v $cmd &> /dev/null; then
         echo "Error: '$cmd' is not installed."
-        echo "Install dependencies: brew install rsync ifuse"
+        echo "To install: $INSTALL_CMD"
         exit 1
     fi
 done
@@ -108,8 +119,12 @@ find "$BACKUP_MIRROR" -type f -not -name ".*" | while read -r file; do
     FILENAME=$(basename "$file")
     
     # Get modification year and month (YYYY/MM)
-    # Using stat -f "%Sm" -t "%Y/%m" works well on macOS
-    DATE_PATH=$(stat -f "%Sm" -t "%Y/%m" "$file")
+    if [[ "$OS_TYPE" == "Darwin" ]]; then
+        DATE_PATH=$(stat -f "%Sm" -t "%Y/%m" "$file")
+    else
+        # GNU stat on Linux
+        DATE_PATH=$(stat -c "%y" "$file" | cut -d'-' -f1,2 | tr '-' '/')
+    fi
     
     TARGET_DIR="$ORGANIZED_VIEW/$DATE_PATH"
     TARGET_FILE="$TARGET_DIR/$FILENAME"
@@ -130,11 +145,16 @@ read -p "Do you want to convert HEIC photos to JPG in the Organized folder? (y/n
 echo
 if [[ $REPLY =~ ^[Yy]$ ]]; then
     echo "Converting HEIC images..."
-    find "$ORGANIZED_VIEW" -name "*.HEIC" -o -name "*.heic" | while read -r file; do
+    find "$ORGANIZED_VIEW" \( -name "*.HEIC" -o -name "*.heic" \) | while read -r file; do
         jpg_file="${file%.*}.JPG"
         if [ ! -f "$jpg_file" ]; then
             echo "Converting $(basename "$file")..."
-            sips -s format jpeg -s formatOptions 80 "$file" --out "$jpg_file" &>/dev/null
+            if [[ "$OS_TYPE" == "Darwin" ]]; then
+                sips -s format jpeg -s formatOptions 80 "$file" --out "$jpg_file" &>/dev/null
+            else
+                # Using ImageMagick on Linux
+                convert "$file" -quality 80 "$jpg_file" &>/dev/null
+            fi
         fi
     done
     echo "✅ Conversion complete."
@@ -143,5 +163,10 @@ fi
 # 7. Cleanup
 echo "---------------------------------------------------"
 echo "Unmounting iPhone..."
-umount "$IPHONE_MOUNT_POINT"
+if [[ "$OS_TYPE" == "Darwin" ]]; then
+    umount "$IPHONE_MOUNT_POINT"
+else
+    # fusermount is safer for FUSE mounts on Linux
+    fusermount -u "$IPHONE_MOUNT_POINT" || umount "$IPHONE_MOUNT_POINT"
+fi
 echo "✨ All operations complete. Check $ORGANIZED_VIEW"

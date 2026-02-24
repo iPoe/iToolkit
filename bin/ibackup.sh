@@ -38,11 +38,30 @@ else
     exit 1
 fi
 
-# 3. Validation Checks
+# 3. Validation Checks & OS Detection
+OS_TYPE=$(uname -s)
+
 if [ -z "$IPHONE_BACKUP_PATH" ]; then
     echo "Error: IPHONE_BACKUP_PATH is not set in your .env file."
     exit 1
 fi
+
+# Define dependencies based on OS
+if [[ "$OS_TYPE" == "Darwin" ]]; then
+    DEPS="idevicebackup2 idevice_id"
+    INSTALL_CMD="brew install libimobiledevice"
+else
+    DEPS="idevicebackup2 idevice_id"
+    INSTALL_CMD="sudo dnf install libimobiledevice"
+fi
+
+for cmd in $DEPS; do
+    if ! command -v $cmd &> /dev/null; then
+        echo "Error: '$cmd' is not installed."
+        echo "To install: $INSTALL_CMD"
+        exit 1
+    fi
+done
 
 # Ensure directory exists
 if [ ! -d "$IPHONE_BACKUP_PATH" ]; then

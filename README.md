@@ -41,6 +41,25 @@ brew install ifuse-mac
 
 ---
 
+## 🐧 Fedora Setup Guide
+
+Installing iToolkit on Fedora is straightforward as all dependencies are available in the official repositories.
+
+### 1. Install Dependencies
+Run the following command to install the required tools:
+
+```bash
+sudo dnf install libimobiledevice ifuse rsync ImageMagick
+```
+
+> [!NOTE]
+> `ImageMagick` is used for the optional HEIC to JPG conversion on Linux.
+
+### 2. Permissions
+Ensure your user is part of the `fuse` group (if applicable) or that you have permissions to mount devices via FUSE.
+
+---
+
 ## 🚀 Installation & Configuration
 
 1. **Clone this repository**:

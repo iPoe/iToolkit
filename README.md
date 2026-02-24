@@ -8,55 +8,101 @@
 - **iphoto-import**: Syncs photos from your iPhone and organizes them into a `Year/Month` folder structure using **hardlinks** (to save disk space while keeping your backup mirror intact).
 - **HEIC to JPG Conversion**: Optional auto-conversion of HEIC images to JPG during import.
 
-## Prerequisites
+---
 
-You need the following tools installed on your Mac:
+## 🛠 macOS Setup Guide
+
+Setting up `ifuse` on modern macOS can be tricky. Follow these steps for a smooth installation:
+
+### 1. Install macFUSE
+`ifuse` requires a FUSE kernel extension. Download and install the latest version of **macFUSE** from [osxfuse.github.io](https://osxfuse.github.io/).
+
+> [!IMPORTANT]
+> Since macOS High Sierra, you must manually allow the kernel extension in **System Settings > Privacy & Security**. You may need to restart your Mac.
+
+### 2. Install Dependencies
+Install the required command-line tools via Homebrew:
 
 ```bash
-brew install libimobiledevice ifuse rsync
+brew install libimobiledevice rsync
 ```
 
-- `libimobiledevice`: For communication with iOS devices.
-- `ifuse`: For mounting the iPhone filesystem.
-- `rsync`: For efficient file syncing.
-- `sips`: (Pre-installed on macOS) For image conversion.
+### 3. Install ifuse using the included Tap
+Since `ifuse` was removed from the Homebrew core tap, this repository includes a local copy of the `homebrew-fuse` tap to simplify installation.
 
-## Installation
+From the project root, run:
+```bash
+# Register the local tap
+brew tap gromgit/fuse ./homebrew-fuse
 
-1. Clone this repository:
+# Install ifuse-mac
+brew install ifuse-mac
+```
+
+---
+
+## 🚀 Installation & Configuration
+
+1. **Clone this repository**:
    ```bash
    git clone https://github.com/yourusername/iToolkit.git
    cd iToolkit
    ```
 
-2. Create your configuration file:
+2. **Setup your environment**:
    ```bash
    cp .env.example .env
    ```
 
-3. Edit `.env` and set your desired paths.
+3. **Edit `.env`**:
+   Set your desired paths for backups and photo organization.
+   - `IPHONE_BACKUP_PATH`: Where full backups will sit.
+   - `PHOTO_DESTINATION`: Where your photos will be imported and organized.
+   - `IPHONE_MOUNT_POINT`: A folder where the iPhone's filesystem will be mounted (e.g., `~/mnt/iphone`).
 
-## Usage
+---
+
+## 📖 Usage
+
+Before running any script, connect your iPhone via USB and **"Trust This Computer"** when prompted on the device.
 
 ### 1. Full iPhone Backup
-To perform a full backup of your device:
+To perform a full device backup:
 ```bash
 ./bin/ibackup.sh
 ```
 
 ### 2. Photo Import & Organization
-To sync photos and organize them by date:
+This tool automates mounting, syncing, and organizing your photos. 
 ```bash
 ./bin/iphoto-import.sh
 ```
 
-## How It Works (Photo Organization)
-The `iphoto-import` tool performs a two-phase process:
-1. **Mirror**: It creates an exact copy of your iPhone's `DCIM` folder on your local drive.
-2. **Organize**: It scans the mirror and creates a separate folder structure (`YYYY/MM`). Instead of copying files again, it uses **Hardlinks**. This means you can see your photos in two different ways (the original mirror and the organized view) without using double the disk space.
+**How it works:**
+1. **Mounts**: Automatically mounts your iPhone to the path specified in `.env`.
+2. **Mirror Phase**: Creates an exact copy of the `DCIM` folder on your local drive.
+3. **Organize Phase**: Scans the mirror and creates a `YYYY/MM` structure using **Hardlinks**. This keeps your photos organized without using double the disk space!
+4. **Cleanup**: Gracefully unmounts the device when finished.
+
+---
+
+## 📂 Project Structure
+
+- `bin/`: The executable shell scripts.
+- `homebrew-fuse/`: Local Homebrew tap for FUSE formulae.
+- `.env`: Your local configuration (ignored by git).
+
+## 💡 Troubleshooting
+
+- **"Mount failed"**: Ensure your iPhone is unlocked and you have tapped "Trust" on the screen.
+- **"Permission denied" (FUSE)**: Ensure macFUSE is properly allowed in System Settings.
+- **Script permissions**: If the scripts won't run, try `chmod +x bin/*.sh`.
+
+---
 
 ## Contributing
 Feel free to open issues or submit pull requests to improve these tools!
 
 ## License
 MIT
+
